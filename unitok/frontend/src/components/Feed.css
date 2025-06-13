@@ -1,0 +1,23 @@
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.empty-feed {
+  background-color: white;
+  border-radius: var(--border-radius);
+  padding: 40px;
+  text-align: center;
+  box-shadow: var(--box-shadow);
+}
+
+.empty-feed h2 {
+  color: var(--primary-color);
+  margin-bottom: 10px;
+}
+
+.empty-feed p {
+  color: #666;
+  font-size: 1.1rem;
+}
