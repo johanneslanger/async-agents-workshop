@@ -1,0 +1,248 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-app
+
+  Sample SAM Template for sam-app
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 900
+    # You can add LoggingConfig parameters such as the Logformat, Log Group, and SystemLogLevel or ApplicationLogLevel. Learn more here https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-loggingconfig.
+    LoggingConfig:
+      LogFormat: JSON
+  Api:
+    OpenApiVersion: 3.0.1
+    # Cors: '*'
+
+Parameters:
+  ApprovalEmail:
+    Type: String
+    Description: Email address for approval notifications
+    Default: talhachattha+strands@gmail.com
+
+Resources:
+  # Following resources will be created
+  # DynamoDB Table for Agent Memory Store with session_id as primary key
+  # SNS for sending out emails for approval
+  # SQS for sending out tasks to the agent whether net new or tool result of existing ones
+  # API Gateway for handling approve or deny from the user
+  # Lambda function to be triggered by API Gateway and creating task in SQS
+  # Lambda function for Agent implementation which gets triggered by the SQS
+
+  # ------------------------------------
+  # DynamoDB Table: Agent Memory Store
+  AgentMemoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: agent-memory-store
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: session_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: session_id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+  # ------------------------------------
+  # SNS Topic: Approval Notifications
+  ApprovalNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: approval-notifications
+      DisplayName: Agent Approval Notifications
+  
+
+  # SNS Subscription: Email Notifications
+  ApprovalEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref ApprovalNotificationTopic
+      Endpoint: !Ref ApprovalEmail
+  # ------------------------------------
+  # SQS Queue: Agent Tasks
+  AgentTaskQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: agent-tasks
+      VisibilityTimeout: 900
+      MessageRetentionPeriod: 1209600 # 14 days
+      ReceiveMessageWaitTimeSeconds: 20 # Enable long polling
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt AgentTaskQueueDeadLetter.Arn
+        maxReceiveCount: 3
+  
+  # Dead Letter Queue: Agent Task Queue
+  AgentTaskQueueDeadLetter:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: agent-tasks-dead-letter-queue
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1209600 # 14 days
+  # ------------------------------------
+  ApprovalApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: approval-api
+      Description: API for handling approval/denial responses
+      EndpointConfiguration:
+        Type: REGIONAL
+      StageName: dev
+
+  StrandsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: python3.11
+      BuildArchitecture: arm64
+    Properties:
+      LayerName: strands-agents-dependencies
+      Description: Dependencies containing implementation for strands agents
+      ContentUri: layers/strands/
+      CompatibleRuntimes:
+        - python3.11
+      CompatibleArchitectures:
+        - arm64
+      LicenseInfo: MIT
+      RetentionPolicy: Retain
+
+  ApprovalHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/approval_handler/
+      Handler: index.lambda_handler
+      Runtime: python3.11
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          SQS_QUEUE_URL: !Ref AgentTaskQueue
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt AgentTaskQueue.QueueName
+      Events:
+        ApproveEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApprovalApi
+            Path: /approval/approve/{session_id}
+            Method: get
+            RequestParameters:
+              - method.request.querystring.toolUseId:
+                  Required: true
+        DenyEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApprovalApi
+            Path: /approval/deny/{session_id}
+            Method: get
+            RequestParameters:
+              - method.request.querystring.toolUseId:
+                  Required: true
+  
+  AgentHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/agent/
+      Handler: index.lambda_handler
+      Runtime: python3.11
+      Layers:
+      - !Ref StrandsLayer
+      Architectures:
+      - arm64
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        # SQS permissions
+        - SQSPollerPolicy:
+            QueueName: !GetAtt AgentTaskQueue.QueueName
+        
+        # DynamoDB permissions
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AgentMemoryTable
+        
+        # SNS permissions
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt ApprovalNotificationTopic.TopicName
+        
+        # Bedrock permissions
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'bedrock:InvokeModel'
+                - 'bedrock:InvokeModelWithResponseStream'
+              Resource: '*'  # You can restrict to specific models if needed
+      
+      Environment:
+        Variables:
+          MEMORY_TABLE: !Ref AgentMemoryTable
+          TOPIC_ARN: !Ref ApprovalNotificationTopic
+          APPROVAL_API_ENDPOINT: !Sub "https://${ApprovalApi}.execute-api.${AWS::Region}.amazonaws.com/dev/approval/"
+      
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt AgentTaskQueue.Arn
+            BatchSize: 1
+            MaximumBatchingWindowInSeconds: 0
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+
+
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  DynamoDBTableName:
+    Description: "DynamoDB Table Name"
+    Value: !Ref AgentMemoryTable
+    Export:
+      Name: !Sub "${AWS::StackName}-agent-memory-table"
+  SQSQueueUrl:
+    Description: "SQS Queue URL"
+    Value: !Ref AgentTaskQueue
+    Export:
+      Name: !Sub "${AWS::StackName}-agent-task-queue-url"
+  SQSQueueArn:
+    Description: ARN of the SQS queue for agent wake-up messages
+    Value: !GetAtt AgentTaskQueue.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-agent-task-queue-arn"
+  SNSTopicArn:
+    Description: ARN of the SNS topic for approval notifications
+    Value: !Ref ApprovalNotificationTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-approval-topic-arn"
+  ApprovalApi:
+    Description: API Gateway endpoint URL for approval/denial responses
+    Value: !Sub "https://${ApprovalApi}.execute-api.${AWS::Region}.amazonaws.com/dev/approval/"
+    Export:
+      Name: !Sub "${AWS::StackName}-approval-api"
+  ApprovalHandlerFunction:
+    Description: Approval Handler Lambda function ARN
+    Value: !GetAtt ApprovalHandlerFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-approval-handler-lambda"
+  AgentHandlerFunction:
+    Description: Agent Handler Lambda function ARN
+    Value: !GetAtt AgentHandlerFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-agent-handler-lambda"
+  ApprovalHandlerRole:
+    Description: Implicit IAM Role created for Approval Handler function
+    Value: !GetAtt ApprovalHandlerFunctionRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-approval-handler-role"
+  AgentHandlerRole:
+    Description: Implicit IAM Role created for Agent Handler function
+    Value: !GetAtt AgentHandlerFunctionRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-agent-handler-role"
