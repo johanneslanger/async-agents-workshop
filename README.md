@@ -16,25 +16,6 @@ By the end of this workshop, participants will be able to:
 - Build a complete social media campaign management system with multiple coordinated agents
 - Integrate agents with external APIs and services
 
-## Technical Architecture
-
-This workshop uses a full-stack application called **UniTok** - a unicorn-themed social media platform:
-
-### Backend
-- **AWS Lambda Functions**: Python-based serverless functions for publishing and retrieving posts
-- **Amazon DynamoDB**: NoSQL database for storing social media posts
-- **Amazon API Gateway**: RESTful API for interacting with the backend services
-- **AWS CloudFront**: Content delivery network for the frontend
-
-### Frontend
-- **React**: JavaScript library for building the user interface
-- **Amazon S3**: Hosting for the static website assets
-- **CSS**: Custom styling for the unicorn-themed interface
-
-### AI Agents
-- **Strands SDK**: Framework for building and deploying AI agents
-- **Amazon Bedrock**: Provides Claude 3.7 Sonnet model for agent intelligence
-- **Custom Tools**: Python functions that allow agents to interact with the UniTok API
 
 ## Workshop Modules
 
@@ -129,28 +110,9 @@ Build a supervisor campaign manager that coordinates multiple specialized agents
 7. Follow the module notebooks in sequence
    - Start with `notebooks/module1/post_generator_agent.ipynb`
 
-## Technical Details
-
-### Post Structure
-Posts in the UniTok platform include the following fields:
-- `postId`: Unique identifier for the post
-- `content`: The text content of the post
-- `author`: The creator of the post (default: "Anonymous Unicorn")
-- `imageUrl`: Optional URL to an image
-- `unicornColor`: Color of the unicorn (options: pink, blue, purple, green, yellow, rainbow)
-- `timestamp`: When the post was created
-- `likes`: Number of likes the post has received
-
-### Agent Capabilities
-The agents built in this workshop can:
-- Generate creative social media content
-- Evaluate content against brand guidelines
-- Publish posts directly to the UniTok platform
-- Coordinate with other agents and human team members
-- Execute multi-step marketing campaigns
 
 ## Resources
 
-- [Strands SDK Documentation](https://docs.anthropic.com/claude/docs/strands-sdk)
+- [Strands SDK Documentation](https://strandsagents.com/latest/)
 - [AWS CDK Documentation](https://docs.aws.amazon.com/cdk/latest/guide/home.html)
-- [Claude API Documentation](https://docs.anthropic.com/claude/reference/getting-started-with-the-api)
+
