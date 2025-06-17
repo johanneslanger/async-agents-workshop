@@ -59,10 +59,20 @@ def publish_post(tool: ToolUse, **kwargs: Any) -> ToolResult:
         # Check if the request was successful
         if response.status_code == 201:
             post_id = response.json().get("postId")
-            return f"Post published successfully! Post ID: {post_id}"
+            message = f"Post published successfully! Post ID: {post_id}"
+            status = "success"
         else:
-            return f"Failed to publish post. Status code: {response.status_code}, Response: {response.text}"
-            
+            message = f"Failed to publish post. Status code: {response.status_code}, Response: {response.text}"
+            status = "error"
+        return {
+            "toolUseId": tool_use_id,
+            "status": status,
+            "content": [{"text": message}]
+        }
     except Exception as e:
-        return f"Error publishing post: {str(e)}"
+        return {
+            "toolUseId": tool_use_id,
+            "status": "error",
+            "content": [{"text": f"Error publishing post: {str(e)}"}]
+        }
         

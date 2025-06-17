@@ -1,11 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  sam-app
+  Async Agents
 
-  Sample SAM Template for sam-app
-
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
     Timeout: 900
@@ -40,14 +37,17 @@ Resources:
   AgentMemoryTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: agent-memory-store
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: session_id
           AttributeType: S
+        - AttributeName: agent_name
+          AttributeType: S
       KeySchema:
         - AttributeName: session_id
           KeyType: HASH
+        - AttributeName: agent_name
+          KeyType: RANGE
       TimeToLiveSpecification:
         AttributeName: ttl
         Enabled: true
@@ -264,7 +264,7 @@ Resources:
         SQSEvent:
           Type: SQS
           Properties:
-            Queue: !GetAtt PostGeneratorAgentTaskQueue.Arn
+            Queue: !GetAtt EvaluatorAgentTaskQueue.Arn
             BatchSize: 1
             MaximumBatchingWindowInSeconds: 0
             FunctionResponseTypes:
@@ -307,17 +307,27 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-approval-handler-lambda"
   PostGeneratorAgent:
-    Description: Agent Handler Lambda function ARN
+    Description: Post Generator Agent Handler Lambda function ARN
     Value: !GetAtt PostGeneratorAgent.Arn
     Export:
       Name: !Sub "${AWS::StackName}-post-generator-agent"
+  EvaluatorAgent:
+    Description: Evaluator Agent Handler Lambda function ARN
+    Value: !GetAtt EvaluatorAgent.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-evaluator-agent"
   ApprovalHandlerRole:
     Description: Implicit IAM Role created for Approval Handler function
     Value: !GetAtt ApprovalHandlerFunctionRole.Arn
     Export:
       Name: !Sub "${AWS::StackName}-approval-handler-role"
   PostGeneratorAgentRole:
-    Description: Implicit IAM Role created for Agent Handler function
+    Description: Implicit IAM Role created for post generator agent function
     Value: !GetAtt PostGeneratorAgentRole.Arn
     Export:
       Name: !Sub "${AWS::StackName}-post-generator-agent-role"
+  EvaluatorAgentRole:
+    Description: Implicit IAM Role created for evaluator agent function
+    Value: !GetAtt EvaluatorAgentRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-evaluator-agent-role"

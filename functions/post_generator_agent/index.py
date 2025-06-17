@@ -9,7 +9,7 @@ from strands.models import BedrockModel
 # Local imports
 import human_approval
 import publish_post
-import evaluator
+import evaluator_agent
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +178,7 @@ def lambda_handler(event, context):
     agent = Agent(
         system_prompt=system_prompt,
         model=model,
-        tools=[evaluator, human_approval, publish_post],
+        tools=[evaluator_agent, human_approval, publish_post],
         messages=history,
     )
     
@@ -186,7 +186,7 @@ def lambda_handler(event, context):
 
     if result.state.get("stop_event_loop", False):
         logger.info("Agent needs to wait for tool result. Saving state and sleeping.")
-        save_to_agent_memory(session_id, agent.messages, parent)
+    save_to_agent_memory(session_id, agent.messages, parent)
 
     logger.info(str(result))
 

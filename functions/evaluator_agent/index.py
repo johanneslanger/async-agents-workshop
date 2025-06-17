@@ -176,7 +176,7 @@ def lambda_handler(event, context):
 
     if result.state.get("stop_event_loop", False):
         logger.info("Agent needs to wait for tool result. Saving state and sleeping.")
-        save_to_agent_memory(session_id, agent.messages, parent)
+    save_to_agent_memory(session_id, agent.messages, parent)
 
     logger.info(str(result))
 

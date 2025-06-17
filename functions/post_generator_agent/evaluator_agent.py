@@ -27,7 +27,7 @@ TOOL_SPEC = {
     }
 }
 
-def evaluator(tool: ToolUse, **kwargs: Any) -> ToolResult:
+def evaluator_agent(tool: ToolUse, **kwargs: Any) -> ToolResult:
     tool_use_id = tool["toolUseId"]
     content = tool["input"]["content"]
     request_state = kwargs.get("request_state", {})
@@ -81,7 +81,7 @@ def evaluator(tool: ToolUse, **kwargs: Any) -> ToolResult:
     
     # Return success page
     return {
-        'statusCode': 200,
-        'headers': {'Content-Type': 'text/html'},
-        'body': "Requested evaluation from evaluator agent and waiting for response"
+        "toolUseId": tool_use_id,
+        "status": "success",
+        "content": [{"text": "Requested evaluation from evaluator agent and waiting for response"}]
     }

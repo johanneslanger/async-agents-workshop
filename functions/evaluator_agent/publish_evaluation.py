@@ -26,7 +26,7 @@ TOOL_SPEC = {
     }
 }
 
-def evaluator(tool: ToolUse, **kwargs: Any) -> ToolResult:
+def publish_evaluation(tool: ToolUse, **kwargs: Any) -> ToolResult:
     tool_use_id = tool["toolUseId"]
     content = tool["input"]["evaluation"]
     request_state = kwargs.get("request_state", {})
@@ -53,15 +53,15 @@ def evaluator(tool: ToolUse, **kwargs: Any) -> ToolResult:
         "session_id": session_id,
         "type": "existing",
         "toolName": "evaluator_agent",
-        "body": {
+        "body": [{
             'toolResult': {
                 'toolUseId': parent['tool_use_id'],
                 'status': 'success',
                 'content': [{'text': content}]
             }
-        }
+        }]
     }
-        
+    logger.info(f'Reporting evaluation for session_id {session_id} with the toolResult {message_body["body"][0]["toolResult"]}')
     sqs = boto3.client('sqs')
     sqs.send_message(
         QueueUrl=POST_GENERATOR_AGENT_SQS_URL,
@@ -81,9 +81,9 @@ def evaluator(tool: ToolUse, **kwargs: Any) -> ToolResult:
     # Set the stop flag, so that the agent can sleep and store it's state in memory.
     request_state["stop_event_loop"] = True
 
-    # Return success page
+    # Return success
     return {
-        'statusCode': 200,
-        'headers': {'Content-Type': 'text/html'},
-        'body': "Reported evaluation results to the requester"
+        "toolUseId": tool_use_id,
+        "status": "success",
+        "content": [{"text": "Reported evaluation results to the requester"}]
     }
