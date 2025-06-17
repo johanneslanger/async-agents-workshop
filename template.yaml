@@ -21,6 +21,10 @@ Parameters:
     Type: String
     Description: Email address for approval notifications
     Default: talhachattha+strands@gmail.com
+  PublishAPIEndpoint:
+    Type: String
+    Description: API endpoint for publishing the post
+    Default: https://08pzccde2k.execute-api.us-east-1.amazonaws.com/prod/posts  # Replace with your actual API endpoint
 
 Resources:
   # Following resources will be created
@@ -66,23 +70,43 @@ Resources:
       TopicArn: !Ref ApprovalNotificationTopic
       Endpoint: !Ref ApprovalEmail
   # ------------------------------------
-  # SQS Queue: Agent Tasks
-  AgentTaskQueue:
+  # SQS Queue: Post Generator Agent Tasks
+  PostGeneratorAgentTaskQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: agent-tasks
+      QueueName: post-generator-agent-tasks
       VisibilityTimeout: 900
       MessageRetentionPeriod: 1209600 # 14 days
       ReceiveMessageWaitTimeSeconds: 20 # Enable long polling
       RedrivePolicy:
-        deadLetterTargetArn: !GetAtt AgentTaskQueueDeadLetter.Arn
+        deadLetterTargetArn: !GetAtt PostGeneratorAgentTaskQueueDeadLetter.Arn
         maxReceiveCount: 3
   
   # Dead Letter Queue: Agent Task Queue
-  AgentTaskQueueDeadLetter:
+  PostGeneratorAgentTaskQueueDeadLetter:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: agent-tasks-dead-letter-queue
+      QueueName: post-generator-agent-tasks-dead-letter-queue
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1209600 # 14 days
+
+  # SQS Queue: Evaluator Agent Task Queue
+  EvaluatorAgentTaskQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: evaluator-agent-tasks
+      VisibilityTimeout: 900
+      MessageRetentionPeriod: 1209600 # 14 days
+      ReceiveMessageWaitTimeSeconds: 20 # Enable long polling
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt EvaluatorAgentTaskQueueDeadLetter.Arn
+        maxReceiveCount: 3
+  
+  # Dead Letter Queue: Agent Task Queue
+  EvaluatorAgentTaskQueueDeadLetter:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: evaluator-agent-tasks-dead-letter-queue
       VisibilityTimeout: 300
       MessageRetentionPeriod: 1209600 # 14 days
   # ------------------------------------
@@ -121,11 +145,11 @@ Resources:
       - arm64
       Environment:
         Variables:
-          SQS_QUEUE_URL: !Ref AgentTaskQueue
+          SQS_QUEUE_URL: !Ref PostGeneratorAgentTaskQueue
       Policies:
         - AWSLambdaBasicExecutionRole
         - SQSSendMessagePolicy:
-            QueueName: !GetAtt AgentTaskQueue.QueueName
+            QueueName: !GetAtt PostGeneratorAgentTaskQueue.QueueName
       Events:
         ApproveEvent:
           Type: Api
@@ -146,10 +170,10 @@ Resources:
               - method.request.querystring.toolUseId:
                   Required: true
   
-  AgentHandlerFunction:
+  PostGeneratorAgent:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/agent/
+      CodeUri: functions/post_generator_agent/
       Handler: index.lambda_handler
       Runtime: python3.11
       Layers:
@@ -158,10 +182,12 @@ Resources:
       - arm64
       Policies:
         - AWSLambdaBasicExecutionRole
-        # SQS permissions
+        # SQS permissions to write to the queue of other agents as well poll from it's own queue
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt EvaluatorAgentTaskQueue.QueueName
         - SQSPollerPolicy:
-            QueueName: !GetAtt AgentTaskQueue.QueueName
-        
+            QueueName: !GetAtt PostGeneratorAgentTaskQueue.QueueName
+
         # DynamoDB permissions
         - DynamoDBCrudPolicy:
             TableName: !Ref AgentMemoryTable
@@ -184,12 +210,61 @@ Resources:
           MEMORY_TABLE: !Ref AgentMemoryTable
           TOPIC_ARN: !Ref ApprovalNotificationTopic
           APPROVAL_API_ENDPOINT: !Sub "https://${ApprovalApi}.execute-api.${AWS::Region}.amazonaws.com/dev/approval/"
+          CALLBACK_SQS_URL: !Ref PostGeneratorAgentTaskQueue
+          EVALUATOR_AGENT_SQS_URL: !Ref EvaluatorAgentTaskQueue
+          PUBLISH_API_ENDPOINT: !Ref PublishAPIEndpoint
       
       Events:
         SQSEvent:
           Type: SQS
           Properties:
-            Queue: !GetAtt AgentTaskQueue.Arn
+            Queue: !GetAtt PostGeneratorAgentTaskQueue.Arn
+            BatchSize: 1
+            MaximumBatchingWindowInSeconds: 0
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+  EvaluatorAgent:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/evaluator_agent/
+      Handler: index.lambda_handler
+      Runtime: python3.11
+      Layers:
+      - !Ref StrandsLayer
+      Architectures:
+      - arm64
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        # SQS permissions to write to the queue of other agents as well poll from it's own queue
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt PostGeneratorAgentTaskQueue.QueueName
+        - SQSPollerPolicy:
+            QueueName: !GetAtt EvaluatorAgentTaskQueue.QueueName
+
+        # DynamoDB permissions
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AgentMemoryTable
+        
+        # Bedrock permissions
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'bedrock:InvokeModel'
+                - 'bedrock:InvokeModelWithResponseStream'
+              Resource: '*'  # You can restrict to specific models if needed
+      
+      Environment:
+        Variables:
+          MEMORY_TABLE: !Ref AgentMemoryTable
+          CALLBACK_SQS_URL: !Ref EvaluatorAgentTaskQueue
+          POST_GENERATOR_AGENT_SQS_URL: !Ref PostGeneratorAgentTaskQueue
+      
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt PostGeneratorAgentTaskQueue.Arn
             BatchSize: 1
             MaximumBatchingWindowInSeconds: 0
             FunctionResponseTypes:
@@ -206,14 +281,14 @@ Outputs:
     Value: !Ref AgentMemoryTable
     Export:
       Name: !Sub "${AWS::StackName}-agent-memory-table"
-  SQSQueueUrl:
+  PostGeneratorAgentSQSQueueUrl:
     Description: "SQS Queue URL"
-    Value: !Ref AgentTaskQueue
+    Value: !Ref PostGeneratorAgentTaskQueue
     Export:
       Name: !Sub "${AWS::StackName}-agent-task-queue-url"
-  SQSQueueArn:
-    Description: ARN of the SQS queue for agent wake-up messages
-    Value: !GetAtt AgentTaskQueue.Arn
+  PostGeneratorAgentSQSQueueArn:
+    Description: ARN of the SQS queue for post generator agent tasks
+    Value: !GetAtt PostGeneratorAgentTaskQueue.Arn
     Export:
       Name: !Sub "${AWS::StackName}-agent-task-queue-arn"
   SNSTopicArn:
@@ -231,18 +306,18 @@ Outputs:
     Value: !GetAtt ApprovalHandlerFunction.Arn
     Export:
       Name: !Sub "${AWS::StackName}-approval-handler-lambda"
-  AgentHandlerFunction:
+  PostGeneratorAgent:
     Description: Agent Handler Lambda function ARN
-    Value: !GetAtt AgentHandlerFunction.Arn
+    Value: !GetAtt PostGeneratorAgent.Arn
     Export:
-      Name: !Sub "${AWS::StackName}-agent-handler-lambda"
+      Name: !Sub "${AWS::StackName}-post-generator-agent"
   ApprovalHandlerRole:
     Description: Implicit IAM Role created for Approval Handler function
     Value: !GetAtt ApprovalHandlerFunctionRole.Arn
     Export:
       Name: !Sub "${AWS::StackName}-approval-handler-role"
-  AgentHandlerRole:
+  PostGeneratorAgentRole:
     Description: Implicit IAM Role created for Agent Handler function
-    Value: !GetAtt AgentHandlerFunctionRole.Arn
+    Value: !GetAtt PostGeneratorAgentRole.Arn
     Export:
-      Name: !Sub "${AWS::StackName}-agent-handler-role"
+      Name: !Sub "${AWS::StackName}-post-generator-agent-role"
