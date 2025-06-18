@@ -105,3 +105,5 @@ lerna-debug.log*
 
 # Clinerules folder (as requested)
 .clinerules/
+
+labs/functions/
