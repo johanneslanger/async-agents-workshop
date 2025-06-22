@@ -10,7 +10,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -61,7 +60,6 @@ cdk-outputs.json
 
 # TypeScript output
 dist/
-lib/
 out/
 *.js
 *.js.map

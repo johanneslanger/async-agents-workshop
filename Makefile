@@ -38,7 +38,7 @@ install-notebook:
 	pip install -r notebooks/requirements.txt
 
 # Combined commands
-install-all: install-infra install-backend install-frontend install-notebook
+install-all: install-infra install-backend install-frontend
 
 deploy-all: build-frontend deploy-infra
 
