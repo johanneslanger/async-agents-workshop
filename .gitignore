@@ -61,7 +61,7 @@ cdk-outputs.json
 # TypeScript output
 dist/
 out/
-*.js
+
 *.js.map
 *.d.ts
 !jest.config.js
