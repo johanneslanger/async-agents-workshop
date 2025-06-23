@@ -23,9 +23,11 @@ export class UniTokStack extends cdk.Stack {
     
     // 3. Frontend resources (depends on API)
     this.createFrontendResources(apiEndpoint);
+
+    const strandsLayer = this.createStrandsLambdaLayer();
     
     // 4. Outputs
-    this.createOutputs(postsTable, apiEndpoint);
+    this.createOutputs(postsTable, apiEndpoint,strandsLayer);
   }
 
   /**
@@ -165,12 +167,43 @@ export class UniTokStack extends cdk.Stack {
 
     // Store the distribution domain name for outputs
     this.distributionDomainName = distribution.distributionDomainName;
+
+    //Layer to deploy strands based agents used throughout the workshop
+       
   }
 
   /**
+     * Creates the S3 bucket and CloudFront distribution for the frontend
+     */
+  private createStrandsLambdaLayer(): lambda.LayerVersion {
+  
+     return new lambda.LayerVersion(this, 'StrandsLayer', {
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../../layers/strands/'), {
+        bundling: {
+          image: lambda.Runtime.PYTHON_3_11.bundlingImage,
+          command: [
+            'bash', '-c', [
+              'pip install --no-cache-dir -r requirements.txt --only-binary=:all: --platform manylinux2014_x86_64 -t /asset-output/python',
+              'cp -r . /asset-output'
+            ].join(' && ')
+          ],
+        },
+      }),
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
+      compatibleArchitectures: [lambda.Architecture.ARM_64],
+      description: 'Dependencies for Strands Agents',
+    });
+  }
+  /**
    * Creates the stack outputs
    */
-  private createOutputs(postsTable: dynamodb.Table, apiEndpoint: string): void {
+  private createOutputs(postsTable: dynamodb.Table, apiEndpoint: string,strandsLayer: lambda.LayerVersion): void {
+
+    new cdk.CfnOutput(this, 'Strandslayer', {
+      value: strandsLayer.layerVersionArn,
+      description: 'The name of the posts table',
+    });
+
     // Database outputs
     new cdk.CfnOutput(this, 'PostsTableName', {
       value: postsTable.tableName,

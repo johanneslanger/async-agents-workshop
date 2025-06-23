@@ -1,6 +1,15 @@
 # Building Asynchronous AI Agents with Strands Agents SDK
 
-## Workshop Overview
+## Table of Contents
+- [Introduction](#introduction)
+- [Workshop Scenario](#workshop-scenario)
+- [What You'll Build](#what-youll-build)
+- [Architecture Overview](#architecture-overview)
+- [Workshop Structure](#workshop-structure)
+- [Getting Started](#getting-started)
+- [Resources](#resources)
+
+## Introduction
 
 Welcome to this hands-on workshop on building asynchronous AI agents using the Strands Agents SDK! Throughout this workshop, you'll learn how to design, implement, and deploy intelligent agents that can operate asynchronously, maintain state across executions, and collaborate with other agents to accomplish complex tasks.
 
@@ -48,25 +57,24 @@ The workshop is divided into four progressive labs:
 3. **Lab 3**: Implement long-running tools with human approval workflow
 4. **Lab 4**: Create a multi-agent system with specialized roles
 
-Each lab builds upon the previous one, gradually introducing more sophisticated patterns for asynchronous agent development.
+Each lab builds upon the previous one, introducing more sophisticated patterns.
 
-## Workshop Scenario
+## Getting Started
 
-We are a marketing team at **Unicorn-Rentals.AI** - a company that offers unicorns for rent that kids and grown-ups can play with. We are planning to launch a new product feature which allows customers to pick their favorite color of unicorn to rent. Our goal is to automate the social media launch using AI agents.
-
-### Prerequisites
-
-- Basic knowledge of Python programming
-- Familiarity with AWS services (AWS Lambda, Amazon SQS, Amazon DynamoDB)
-- AWS account with appropriate permissions
-
-To get started, please first complete the setup steps in the [Lab 0 Prerequisites](labs/lab_0/README.md) folder.
+1. Complete the [Lab 0 Prerequisites](labs/lab_0/README.md)
+2. Open `labs/lab_1/lab_1_notebook.ipynb` in your VSCode environment
+3. Follow the step-by-step instructions in each lab
 
 Let's get started!
 
+### Prerequisites
 
+- Basic Python programming knowledge
+- Familiarity with AWS services (Lambda, SQS, DynamoDB)
+- (If not at an AWS event) AWS account with appropriate permissions
 
 ## Resources
 
-- [Strands SDK Documentation](https://strandsagents.com/latest/)
+- [Strands Agents SDK Documentation](https://strandsagents.com/latest/)
 - [AWS CDK Documentation](https://docs.aws.amazon.com/cdk/latest/guide/home.html)
+- [Amazon Bedrock Documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html)
