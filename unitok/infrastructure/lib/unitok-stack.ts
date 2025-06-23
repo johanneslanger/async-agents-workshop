@@ -183,7 +183,7 @@ export class UniTokStack extends cdk.Stack {
           image: lambda.Runtime.PYTHON_3_11.bundlingImage,
           command: [
             'bash', '-c', [
-              'pip install --no-cache-dir -r requirements.txt --only-binary=:all: --platform manylinux2014_x86_64 -t /asset-output/python',
+              'pip install --no-cache-dir -r requirements.txt --only-binary=:all: --platform manylinux2014_aarch64 -t /asset-output/python',
               'cp -r . /asset-output'
             ].join(' && ')
           ],
