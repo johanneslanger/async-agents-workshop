@@ -1,59 +1,69 @@
-# Building Asynchronous AI Agents with Strands Agents SDK
+# Workshop Prerequisites
 
-## Workshop Overview
+Before starting Lab 1, please complete the following setup steps to ensure you have all the necessary resources and access for the workshop.
 
-Welcome to this hands-on workshop on building asynchronous AI agents using the Strands Agents SDK! Throughout this workshop, you'll learn how to design, implement, and deploy intelligent agents that can operate asynchronously, maintain state across executions, and collaborate with other agents to accomplish complex tasks.
+## 1. Access Your AWS Account
 
-### What You'll Build
+Click on the link shown in the image below to access your AWS account for this workshop:
 
-We'll be creating a marketing automation system for UniTok - a fictional social media platform for renting unicorns. By the end of this workshop, you'll have built a complete system of asynchronous agents that can:
+![AWS Console Access](open-aws-console.png)
 
-1. Generate engaging social media posts
-2. Process tasks asynchronously
-3. Handle long-running operations with state persistence
-4. Collaborate in a multi-agent system with specialized roles
+## 2. Enable Bedrock Model Access for Claude Sonnet 3.7
 
-### Architecture Pattern
+For this workshop, you'll need to enable access to the Claude Sonnet 3.7 model in Amazon Bedrock:
 
-This workshop focuses on an event-driven, serverless architecture pattern that enables truly asynchronous agent execution. The key components include:
+1. Navigate to the ![Amazon Bedrock console](https://console.aws.amazon.com/bedrock/home) in your AWS account
+2. In the left navigation pane, under **Bedrock configurations**, choose **Model access**
+3. On the Model access page, click the **Modify model access** button as shown below:
 
-- **Strands Agents SDK**: Provides the foundation for building intelligent agents with access to tools and LLM capabilities
-- **AWS Lambda**: Serverless compute for running our agents
-- **Amazon SQS**: Message queuing service for task management between agent executions
-- **Amazon DynamoDB**: NoSQL database for persisting agent state
-- **AWS SNS**: Notification service for human-in-the-loop approvals
+![Bedrock Model Access](model-access.png)
 
-### Why This Architecture?
+4. Find and select the Claude 3.7 Sonnet model from Anthropic:
 
-Traditional agent implementations often run synchronously, blocking execution until completion. This approach has several limitations:
+![Claude 3.7 Sonnet Selection](claude-3.7-sonnet.png)
 
-1. **Timeout constraints**: Synchronous executions are limited by platform timeouts (e.g., AWS Lambda's 15-minute limit)
-2. **Resource inefficiency**: Compute resources remain allocated during waiting periods
-3. **Limited scalability**: Difficult to handle concurrent requests efficiently
-4. **Fragility**: Long-running processes are vulnerable to interruptions
+5. Click **Next**
+6. Review the access changes and read the Terms
+7. Click **Submit** to request access to the model
+8. Wait for the access status to change to **Access granted**
 
-Our asynchronous architecture addresses these challenges by:
+> Note: Model access changes may take a few seconds to be reflected in the console, make sure to refresh.
 
-1. **Breaking tasks into discrete steps**: Agents can pause and resume execution
-2. **Persisting state**: Saving progress in Amazon DynamoDB allows for continuity across executions
-3. **Event-driven processing**: Tasks progress only when needed, optimizing resource usage
-4. **Resilience**: System can recover from failures at any stage
+## 3. Access Your VSCode Environment
 
-### Workshop Structure
+To access the VSCode environment for this workshop:
 
-The workshop is divided into four progressive labs:
+1. Navigate to the AWS CloudFormation console in your AWS account
+2. Find and select the stack named **ec2vscode-stack**
+3. Go to the **Outputs** tab to find the access information:
 
-1. **Lab 1**: Build a synchronous post generator agent for generating UniTok marketing posts
-2. **Lab 2**: Convert post generator agent to an asynchronous agent using AWS Lambda and Amazon SQS
-3. **Lab 3**: Implement long-running tools with human approval workflow
-4. **Lab 4**: Create a multi-agent system with specialized roles
+![CloudFormation Outputs](cfn-outputs.png)
 
-Each lab builds upon the previous one, gradually introducing more sophisticated patterns for asynchronous agent development.
+4. Note the following values:
+   - **URL**: The web address to access your VSCode environment (e.g., https://d15zlktv1fa9ju.cloudfront.net/?folder=/Workshop)
+   - **Password**: The password required to log in to the VSCode environment
 
-### Prerequisites
+5. Open the URL in your browser and enter the password when prompted to access your VSCode environment
 
-- Basic knowledge of Python programming
-- Familiarity with AWS services (AWS Lambda, Amazon SQS, Amazon DynamoDB)
-- AWS account with appropriate permissions
+## 4. Clone and Deploy the Workshop Repository
 
-Let's get started with Lab 1!
+Once you're in the VSCode environment, follow these steps to set up the workshop code:
+
+1. Open a terminal in VSCode (Terminal > New Terminal)
+2. Clone the workshop repository:
+   ```bash
+   git clone https://gitlab.aws.dev/jlanger/async-agents-workshop
+   ```
+3. Navigate to the root directory of the cloned repository:
+   ```bash
+   cd async-agents-workshop
+   ```
+4. Deploy the necessary resources for the workshop:
+   ```bash
+   make deploy
+   ```
+   This will set up all the required AWS resources for the workshop.
+
+## Next Steps
+
+Once you've completed all the prerequisites above, you're ready to start with Lab 1! Open the `labs/lab_1/lab_1_notebook.ipynb` file in your VSCode environment to begin.
