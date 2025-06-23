@@ -5,7 +5,7 @@
 In Lab 3, we'll enhance our asynchronous agent architecture to handle long-running operations - specifically, a human approval workflow. This represents a critical pattern for real-world AI applications where certain decisions require human oversight before proceeding. We'll implement this pattern using a combination of state persistence, notifications, and asynchronous callbacks.
 
 ## Lab Objectives
-
+![lab overview](./lab3.png)
 By the end of this lab, you will:
 - Understand how to implement long-running tools in asynchronous agents
 - Configure state persistence using DynamoDB

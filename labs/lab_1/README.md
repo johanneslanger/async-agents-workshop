@@ -1,10 +1,10 @@
 # Building a Synchronous Marketing Agent for UniTok
 
 ## Introduction
-
 In this first lab, we'll build a synchronous agent using the Strands Agents SDK to generate marketing content for UniTok, our fictional unicorn rental social media platform. This lab establishes the foundation for our agent architecture before we transform it into an asynchronous system in later labs.
 
 ## Lab Objectives
+![lab overview](./lab1.png)
 
 By the end of this lab, you will:
 - Understand the basic structure of a Strands Agent

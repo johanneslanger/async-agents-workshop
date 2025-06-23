@@ -6,6 +6,8 @@ In Lab 1, we built a synchronous marketing agent that generates posts for UniTok
 
 ## Lab Objectives
 
+![lab overview](./lab2.png)
+
 By the end of this lab, you will:
 - Understand the benefits of asynchronous agent architectures
 - Package your Strands Agent into an AWS Lambda function

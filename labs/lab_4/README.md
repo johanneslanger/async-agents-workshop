@@ -5,7 +5,7 @@
 In Lab 4, we'll extend our asynchronous architecture to support multiple specialized agents working together. We'll implement a multi-agent pattern where our post generator agent collaborates with an evaluator agent to ensure content meets brand guidelines. This pattern demonstrates how complex tasks can be broken down and distributed across specialized agents, creating more robust and scalable AI systems.
 
 ## Lab Objectives
-
+![lab overview](./lab4.png)
 By the end of this lab, you will:
 - Understand the multi-agent pattern for asynchronous systems
 - Implement inter-agent communication via SQS

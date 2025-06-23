@@ -12,7 +12,7 @@ Click on the link shown in the image below to access your AWS account for this w
 
 For this workshop, you'll need to enable access to the Claude Sonnet 3.7 model in Amazon Bedrock:
 
-1. Navigate to the ![Amazon Bedrock console](https://console.aws.amazon.com/bedrock/home) in your AWS account
+1. Navigate to the [Amazon Bedrock console](https://console.aws.amazon.com/bedrock/home) in your AWS account
 2. In the left navigation pane, under **Bedrock configurations**, choose **Model access**
 3. On the Model access page, click the **Modify model access** button as shown below:
 
@@ -52,7 +52,7 @@ Once you're in the VSCode environment, follow these steps to set up the workshop
 1. Open a terminal in VSCode (Terminal > New Terminal)
 2. Clone the workshop repository:
    ```bash
-   git clone https://gitlab.aws.dev/jlanger/async-agents-workshop
+   git clone https://github.com/johanneslanger/async-agents-workshop
    ```
 3. Navigate to the root directory of the cloned repository:
    ```bash
