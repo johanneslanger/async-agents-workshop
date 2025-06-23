@@ -2,12 +2,17 @@
 
 .PHONY: install-infra deploy-infra install-backend install-frontend start-frontend build-frontend install-all deploy-all install-notebook clean clean-frontend clean-infra clean-all
 
+
+deploy: install-all build-frontend bootstrap deploy-all
 # Infrastructure commands
 install-infra:
 	cd unitok/infrastructure && npm install
 
 deploy-infra:
 	cd unitok/infrastructure && npm run deploy
+
+bootstrap:
+	cd unitok/infrastructure && npm run cdk bootstrap
 
 clean-infra:
 	rm -rf unitok/infrastructure/cdk.out
