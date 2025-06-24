@@ -64,6 +64,10 @@ Once you're in the VSCode environment, follow these steps to set up the workshop
    ```
    This will set up all the required AWS resources for the workshop.
 
+   **Please note this step takes about 5-10 minutes. Use this time to grab a coffee or learn a bit about Strands Agent SDK at https://strandsagents.com/latest/**
+
 ## Next Steps
 
 Once you've completed all the prerequisites above, you're ready to start with Lab 1! Open the `labs/lab_1/lab_1_notebook.ipynb` file in your VSCode environment to begin.
+
+When you open a notebook for the first time in VSCode make sure to accept the popups asking you to isntall and trust ms-python and jupyter kernels and select one of the 3.10.x python kernels .
